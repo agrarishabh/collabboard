@@ -4,7 +4,39 @@ import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 
+const useSecureCookies = process.env.NEXTAUTH_URL?.startsWith("https://") || process.env.NODE_ENV === "production";
+const cookiePrefix = useSecureCookies ? "__Secure-" : "";
+const hostPrefix = useSecureCookies ? "__Host-" : "";
+
 export const authOptions: NextAuthOptions = {
+  cookies: {
+    sessionToken: {
+      name: `${cookiePrefix}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "none",
+        path: "/",
+        secure: true,
+      },
+    },
+    callbackUrl: {
+      name: `${cookiePrefix}next-auth.callback-url`,
+      options: {
+        sameSite: "none",
+        path: "/",
+        secure: true,
+      },
+    },
+    csrfToken: {
+      name: `${hostPrefix}next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "none",
+        path: "/",
+        secure: true,
+      },
+    },
+  },
   // 1. Connect NextAuth to our Neon Database via Prisma
   // This automatically saves users when they log in for the first time
   adapter: PrismaAdapter(prisma) as Adapter,
