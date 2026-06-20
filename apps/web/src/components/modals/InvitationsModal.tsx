@@ -55,7 +55,7 @@ export default function InvitationsModal({ isOpen, onClose }: InvitationsModalPr
   if (!isOpen) return null;
 
   return (
-    <div className="modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-sm  flex items-center justify-center z-50 p-4">
+    <div className="modal-backdrop fixed inset-0 bg-bg-secondary   flex items-center justify-center z-50 p-4">
       <div className="modal-panel bg-bg-surface border border-border-subtle rounded-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[80vh]">
         <div className="p-5 border-b border-border-subtle flex items-center justify-between bg-bg-primary">
           <h2 className="text-xl font-bold text-text-primary">Pending Invitations</h2>

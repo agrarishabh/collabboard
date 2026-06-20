@@ -54,7 +54,7 @@ export default function CreateProjectModal({ isOpen, onClose, workspaceId, onSuc
   };
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm  p-4">
+    <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-bg-secondary   p-4">
       <div className="modal-panel w-full max-w-md bg-bg-surface rounded-2xl border border-border-default overflow-hidden">
         
         {/* Header */}

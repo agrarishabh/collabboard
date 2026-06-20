@@ -114,7 +114,7 @@ export default function ChatDrawer({ isOpen, onClose, workspaceId }: ChatDrawerP
       {/* Backdrop */}
       {isOpen && (
         <div 
-          className="modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-sm  z-90 transition-opacity"
+          className="modal-backdrop fixed inset-0 bg-bg-secondary   z-90 transition-opacity"
           onClick={onClose}
         />
       )}
@@ -148,7 +148,7 @@ export default function ChatDrawer({ isOpen, onClose, workspaceId }: ChatDrawerP
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 bg-black/60 backdrop-blur-sm">
+        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 bg-bg-secondary ">
           {isLoading ? (
             <div className="flex-1 flex items-center justify-center">
               <Loader2 className="animate-spin text-accent" size={32} />

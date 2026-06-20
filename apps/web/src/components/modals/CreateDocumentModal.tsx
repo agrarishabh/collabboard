@@ -47,7 +47,7 @@ export default function CreateDocumentModal({ isOpen, onClose, workspaceId }: Cr
   };
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm ">
+    <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-secondary  ">
       <div 
         className="modal-panel w-full max-w-md bg-bg-surface rounded-2xl border border-border-subtle overflow-hidden"
         role="dialog"

@@ -24,7 +24,7 @@ export default function ConfirmModal({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-100 flex items-center justify-center bg-black/60 backdrop-blur-sm  p-4">
+    <div className="modal-backdrop fixed inset-0 z-100 flex items-center justify-center bg-bg-secondary   p-4">
       <div 
         className="modal-panel w-full max-w-sm bg-bg-surface rounded-2xl border border-border-default overflow-hidden"
         role="dialog"
