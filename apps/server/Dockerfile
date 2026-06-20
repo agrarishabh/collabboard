@@ -8,7 +8,6 @@ WORKDIR /app
 
 # Copy root package.json and workspace configurations
 COPY package*.json ./
-COPY turbo.json ./
 COPY apps/server/package*.json ./apps/server/
 
 # Install all dependencies (workspaces)
