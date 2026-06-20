@@ -1,0 +1,424 @@
+// ============================================================
+// prisma/schema.prisma — THE DATABASE BLUEPRINT
+// ============================================================
+// This file defines EVERY table, column, and relationship in our database.
+// When you change this file and run a migration, Prisma automatically:
+// 1. Generates SQL to update your PostgreSQL tables
+// 2. Generates TypeScript types matching your schema
+// 3. Generates query functions (prisma.user.create(), etc.)
+//
+// Think of this file as an architect's blueprint — you describe
+// WHAT you want, and Prisma builds it for you.
+// ============================================================
+
+// --- GENERATOR ---
+// This tells Prisma to generate a JavaScript/TypeScript client
+// that we'll use in our Express routes to query the database
+generator client {
+  provider = "prisma-client-js"
+}
+
+// --- DATASOURCE ---
+// This tells Prisma WHERE our database is and what type it is
+// "postgresql" = we're using PostgreSQL (not MySQL, SQLite, etc.)
+// The url comes from the DATABASE_URL in our .env file
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// 📊 MODELS (Tables)
+// ============================================================
+// Each "model" below becomes a TABLE in PostgreSQL
+// Each field inside becomes a COLUMN
+// The format is: fieldName  Type  @decorators
+//
+// Common types:
+//   String   → text (VARCHAR)
+//   Int      → integer number
+//   Boolean  → true/false
+//   DateTime → timestamp
+//   Json     → JSON data
+//
+// Common decorators:
+//   @id              → this is the primary key
+//   @unique          → no two rows can have the same value
+//   @default(...)    → default value if not provided
+//   @updatedAt       → automatically updates when row is modified
+//   @relation(...)   → defines a relationship to another table
+// ============================================================
+
+// --- USER ---
+// Represents a person who signed up for CollabBoard
+model User {
+  // Every user gets a unique ID. 
+  // uuid() generates a random ID like "550e8400-e29b-41d4-a716-446655440000"
+  // Why UUID instead of auto-increment (1, 2, 3)?
+  // → UUIDs are globally unique, safe to expose in URLs, and work across distributed systems
+  id        String   @id @default(uuid())
+  
+  // Basic profile info
+  email         String?   @unique  // Optional for OAuth
+  emailVerified DateTime?
+  name          String?
+  image         String?            // Changed from avatar to match NextAuth
+  
+  // Timestamps — track when the user was created and last updated
+  createdAt DateTime @default(now())  // now() = current timestamp when row is created
+  updatedAt DateTime @updatedAt       // auto-updates every time the row changes
+
+  // --- RELATIONS ---
+  // NextAuth Relations
+  accounts      Account[]
+  sessions      Session[]
+
+  // A user can be a MEMBER of many workspaces (through the Member table)
+  // This doesn't create a column — it's a virtual field for querying
+  memberships  Member[]
+
+  // A user can be assigned to many tasks
+  assignedTasks Task[]   @relation("TaskAssignee")
+
+  // A user can create many tasks
+  createdTasks  Task[]   @relation("TaskCreator")
+
+  // A user can write many comments
+  comments      Comment[]
+
+  // A user can send many chat messages
+  chatMessages  ChatMessage[]
+
+  // A user can create many activities
+  activities    Activity[]
+
+  // Map this model to a table called "users" (lowercase, plural)
+  // Without this, Prisma would create a table called "User"
+  @@map("users")
+}
+
+// --- WORKSPACE ---
+// A workspace is like a "team" or "organization"
+// Example: "IIITM Dev Club" workspace, "My Startup" workspace
+model Workspace {
+  id          String   @id @default(uuid())
+  name        String                        // "IIITM Dev Club"
+  description String?                       // Optional description
+  slug        String   @unique              // URL-friendly name: "iiitm-dev-club"
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // --- RELATIONS ---
+  // A workspace has many members (users who joined)
+  members  Member[]
+  
+  // A workspace has many projects inside it
+  projects Project[]
+  // A workspace has many documents
+  documents Document[]
+  @@map("workspaces")
+}
+
+// --- MEMBER ---
+// This is a JOIN TABLE (also called "pivot table" or "junction table")
+// It connects Users ↔ Workspaces with an extra field: "role"
+//
+// Why not just put workspaceId on User?
+// → Because a user can belong to MANY workspaces, and each workspace
+//   has MANY users. This is a MANY-TO-MANY relationship.
+//   The Member table sits in the middle and stores the connection + role.
+//
+// Example rows:
+//   { userId: "rishabh", workspaceId: "iiitm", role: "OWNER" }
+//   { userId: "rishabh", workspaceId: "startup", role: "MEMBER" }
+//   { userId: "amit",    workspaceId: "iiitm", role: "ADMIN" }
+model Member {
+  id   String @id @default(uuid())
+  
+  // The role this user has in this workspace
+  // We define an enum (see below) for type safety
+  role Role   @default(MEMBER)
+
+  // Status of the membership
+  status MemberStatus @default(PENDING)
+
+  // Foreign keys — these CREATE the relationship
+  // "What user?" and "What workspace?"
+  userId      String
+  workspaceId String
+
+  // These lines tell Prisma HOW to join the tables
+  // fields: [userId] → the column in THIS table
+  // references: [id]  → the column in the OTHER table
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  // onDelete: Cascade → if the workspace is deleted, delete all its members too
+
+  createdAt DateTime @default(now())
+
+  // A user can only be a member of a workspace ONCE
+  // This prevents duplicate entries like Rishabh being added twice to IIITM
+  @@unique([userId, workspaceId])
+  @@map("members")
+}
+
+// --- ROLE ENUM ---
+// An enum defines a fixed set of allowed values
+// A user's role can ONLY be one of these 4 values — nothing else
+// This is enforced at the DATABASE level (not just in code)
+enum Role {
+  OWNER   // Created the workspace, full control, can delete it
+  ADMIN   // Can manage members, create/delete projects
+  MEMBER  // Can create/edit tasks, participate in discussions
+  VIEWER  // Read-only access, can view but not modify
+}
+
+// --- MEMBER STATUS ENUM ---
+enum MemberStatus {
+  PENDING   // Invited but hasn't accepted yet
+  ACCEPTED  // Joined the workspace
+}
+
+// --- PROJECT ---
+// A project lives inside a workspace and contains boards
+// Example: "Website Redesign" project, "Mobile App" project
+model Project {
+  id          String   @id @default(uuid())
+  name        String                        // "Website Redesign"
+  description String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Which workspace does this project belong to?
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // A project has many boards
+  boards Board[]
+
+  @@map("projects")
+}
+
+// --- BOARD ---
+// A board is a Kanban board (the main visual element!)
+// Each board has columns like "To Do", "In Progress", "Done"
+model Board {
+  id        String   @id @default(uuid())
+  name      String                          // "Sprint 1 Board"
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Which project does this board belong to?
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // A board has many columns
+  columns Column[]
+
+  @@map("boards")
+}
+
+// --- COLUMN ---
+// A column in a Kanban board (e.g., "To Do", "In Progress", "Done")
+model Column {
+  id       String @id @default(uuid())
+  name     String                           // "To Do"
+  
+  // 'order' determines the LEFT-TO-RIGHT position of columns
+  // order=0 is leftmost, order=1 is next, etc.
+  // When user drag-reorders columns, we update this number
+  order    Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Which board does this column belong to?
+  boardId  String
+  board    Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  // A column contains many tasks
+  tasks    Task[]
+
+  @@map("columns")
+}
+
+// --- TASK ---
+// The core entity! A task is a card on the Kanban board
+// Example: "Fix login bug", "Design homepage", "Write API docs"
+model Task {
+  id          String    @id @default(uuid())
+  title       String                        // "Fix login bug"
+  description String?                       // Detailed description (markdown)
+  
+  // Priority levels for sorting/filtering
+  priority    Priority  @default(MEDIUM)
+  
+  // Position within the column (top-to-bottom order)
+  // When user drags a task up/down, we update this
+  order       Int       @default(0)
+  
+  // Optional due date
+  dueDate     DateTime?
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // --- FOREIGN KEYS ---
+  
+  // Which column is this task in?
+  columnId    String
+  column      Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  
+  // Who created this task?
+  creatorId   String
+  creator     User      @relation("TaskCreator", fields: [creatorId], references: [id])
+  
+  // Who is assigned to this task? (optional — might be unassigned)
+  assigneeId  String?
+  assignee    User?     @relation("TaskAssignee", fields: [assigneeId], references: [id])
+
+  // A task can have many comments
+  comments    Comment[]
+
+  // Labels/tags for categorization (stored as JSON array)
+  // Example: ["bug", "frontend", "urgent"]
+  labels      String[]  @default([])
+
+  @@map("tasks")
+}
+
+// --- PRIORITY ENUM ---
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// --- COMMENT ---
+// Comments on a task (discussion thread)
+model Comment {
+  id        String   @id @default(uuid())
+  content   String                          // The comment text
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Which task is this comment on?
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
+  // Who wrote this comment?
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+
+  @@map("comments")
+}
+
+// --- CHAT MESSAGE ---
+// Real-time chat messages within a workspace
+model ChatMessage {
+  id        String   @id @default(uuid())
+  content   String
+  
+  createdAt DateTime @default(now())
+
+  // Which workspace's chat is this in?
+  workspaceId String
+  
+  // Who sent it?
+  senderId    String
+  sender      User   @relation(fields: [senderId], references: [id])
+
+  @@map("chat_messages")
+}
+
+// --- ACTIVITY ---
+// Activity log — tracks every action for the activity feed
+// Example: "Rishabh moved Task #42 from 'To Do' to 'In Progress'"
+model Activity {
+  id        String   @id @default(uuid())
+  
+  // What happened? Stored as a structured action type
+  action    String                          // "TASK_MOVED", "TASK_CREATED", "MEMBER_ADDED"
+  
+  // Details about the action (flexible JSON)
+  // Example: { "taskTitle": "Fix bug", "from": "To Do", "to": "Done" }
+  details   Json?
+  
+  createdAt DateTime @default(now())
+
+  // Who performed this action?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  // Which workspace did this happen in?
+  workspaceId String
+
+  @@map("activities")
+}
+
+// ============================================================
+// 🔐 NEXTAUTH.JS MODELS
+// ============================================================
+// These models are required by NextAuth.js and @auth/prisma-adapter
+// to handle OAuth logins (Google, GitHub) and sessions.
+// ============================================================
+
+model Account {
+  id                 String  @id @default(uuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// --- DOCUMENT ---
+// Collaborative document (Yjs/Tiptap)
+model Document {
+  id          String   @id @default(uuid())
+  title       String
+  data        Bytes?   // The document's binary state (from Yjs / Liveblocks)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Which workspace does this document belong to?
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}

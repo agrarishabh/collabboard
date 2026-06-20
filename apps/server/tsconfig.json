@@ -1,0 +1,72 @@
+{
+  // === COMPILER OPTIONS ===
+  // These tell TypeScript HOW to compile your .ts files into .js files
+  "compilerOptions": {
+    
+    // "target" = What version of JavaScript should TypeScript output?
+    // "ES2020" means modern JS with features like optional chaining (?.), 
+    // nullish coalescing (??), BigInt, etc.
+    "target": "ES2020",
+
+    // "module" = What module system to use?
+    // "commonjs" means: use require() and module.exports (Node.js standard)
+    // The alternative is "ESNext" which uses import/export (browser standard)
+    // We use commonjs because Node.js + Express traditionally use it
+    "module": "commonjs",
+
+    // "lib" = Which built-in JS APIs should TypeScript know about?
+    // "ES2020" = all standard JS functions (Array.map, Promise, etc.)
+    "lib": ["ES2020"],
+
+    // "outDir" = Where to put the compiled .js files
+    // Our .ts files are in src/, compiled .js goes to dist/
+    "outDir": "./dist",
+
+    // "rootDir" = Where are our source .ts files?
+    "rootDir": "./src",
+
+    // === STRICTNESS OPTIONS ===
+    // "strict" = Enable ALL strict type-checking options
+    // This catches more bugs: null checks, type narrowing, etc.
+    // ALWAYS keep this true — it's the whole point of using TypeScript!
+    "strict": true,
+
+    // "esModuleInterop" = Makes imports from CommonJS modules work smoothly
+    // Without this: import * as express from 'express' (ugly)
+    // With this:    import express from 'express' (clean!)
+    "esModuleInterop": true,
+
+    // "skipLibCheck" = Don't type-check node_modules
+    // Speeds up compilation dramatically (node_modules is huge)
+    "skipLibCheck": true,
+
+    // "forceConsistentCasingInFileNames" = Prevents importing 'User.ts' as 'user.ts'
+    // Important on Windows (case-insensitive) to avoid bugs on Linux (case-sensitive)
+    "forceConsistentCasingInFileNames": true,
+
+    // "resolveJsonModule" = Allows importing .json files directly
+    // Example: import config from './config.json'
+    "resolveJsonModule": true,
+
+    // "declaration" = Generate .d.ts type declaration files alongside .js
+    // Useful if other packages in our monorepo need to import types from here
+    "declaration": true,
+
+    // "declarationMap" = Generate source maps for .d.ts files
+    // Lets you Ctrl+Click on a type in VS Code and go to the .ts source
+    "declarationMap": true,
+
+    // "sourceMap" = Generate .js.map files
+    // Maps compiled JS back to original TS for debugging
+    // When you see an error, it shows the .ts line, not the .js line
+    "sourceMap": true,
+    "jsx": "react-jsx"
+  },
+
+  // "include" = Which files should TypeScript compile?
+  // "src/**/*" means: everything inside the src/ folder (recursive)
+  "include": ["src/**/*"],
+
+  // "exclude" = Which files to skip
+  "exclude": ["node_modules", "dist"]
+}
