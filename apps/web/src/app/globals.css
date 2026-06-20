@@ -76,7 +76,7 @@
   --shadow-elevated: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
-:root {
+@theme {
   --color-bg-primary: var(--bg-primary);
   --color-bg-secondary: var(--bg-secondary);
   --color-bg-surface: var(--bg-surface);
@@ -105,9 +105,7 @@
 
 /* ---- Base Element Styles ---- */
 body {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 280px),
-    var(--bg-secondary);
+  background: var(--bg-secondary);
   color: var(--text-primary);
   font-family: "Outfit", system-ui, sans-serif;
   text-rendering: optimizeLegibility;
@@ -157,9 +155,7 @@ input:focus-visible, textarea:focus-visible {
 }
 
 .app-main {
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.018), transparent 260px),
-    var(--bg-secondary);
+  background: var(--bg-secondary);
 }
 
 .page-shell {
@@ -175,17 +171,13 @@ button:disabled {
 }
 
 .glass-panel {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.006)),
-    var(--bg-surface);
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-soft);
 }
 
 .surface-panel {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.006)),
-    var(--bg-surface);
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-soft);
 }
@@ -193,9 +185,7 @@ button:disabled {
 .interactive-card {
   position: relative;
   isolation: isolate;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0.008)),
-    var(--bg-surface);
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
   transition:
